@@ -45,7 +45,22 @@ def identify_camera(cam_dict, wsdl_path='/etc/onvif/wsdl'):
         onvif_camera = ONVIFCamera(cam_dict['ip'], cam_dict['port'], cam_dict['username'], cam_dict['password'], wsdl_path)
         media_service = onvif_camera.create_media_service()
 
-        #TODO: get camera name
+        # Create a device management service
+        device_mgmt = onvif_camera.create_devicemgmt_service()
+
+        # Get basic device information
+        device_info = device_mgmt.GetDeviceInformation()
+        cam_dict['manufacturer'] = device_info.Manufacturer
+        cam_dict['model'] = device_info.Model
+        cam_dict['firmware_version'] = device_info.FirmwareVersion
+        cam_dict['serial_number'] = device_info.SerialNumber
+        cam_dict['hardware_id'] = device_info.HardwareId
+        if device_info.Manufacturer == 'AQE':
+            cam_dict['name'] = "tortuges"
+        elif device_info.Manufacturer == 'LC':
+            cam_dict['name'] = "terrassa"
+        else:
+            cam_dict['name'] = "unknown"
         
         # Get profiles
         profiles = media_service.GetProfiles()
@@ -63,6 +78,7 @@ def identify_camera(cam_dict, wsdl_path='/etc/onvif/wsdl'):
     return cam_dict
 
 def get_snapshot(cam):
+    print("Retrieving snapshot from", cam['name'])
     response = requests.get(cam['uri'], auth=HTTPDigestAuth(cam['username'], cam['password']), stream=True)
     if response.status_code == 200:
         image = Image.open(BytesIO(response.content))
