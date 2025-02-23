@@ -8,11 +8,12 @@ from urllib.parse import urlparse
 import os
 
 WSDL_PATH = os.path.join(os.path.dirname(__file__), 'python-onvif-zeep/wsdl')
+# WSDL_PATH = '/etc/onvif/wsdl'
 
 
 class myOnvifClass:
 
-    def __init__(self, wsdl_path='/etc/onvif/wsdl'):
+    def __init__(self, wsdl_path=WSDL_PATH):
         try:
             from wsdiscovery import WSDiscovery
             wsd = WSDiscovery()
@@ -115,7 +116,7 @@ class myOnvifClass:
 
 if __name__ == "__main__":
     # Discover cameras
-    cameras = myOnvifClass(wsdl_path=WSDL_PATH)
+    cameras = myOnvifClass()
 
     for camera in cameras.get_camera_list():
         # cameras.show_snapshot(camera)
