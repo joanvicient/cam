@@ -1,6 +1,8 @@
 from ultralytics import YOLO
 import cv2
 import os
+import numpy as np
+from PIL import Image
 
 
 class YOLODetector:
@@ -29,6 +31,7 @@ class YOLODetector:
         :param image_path: Path to the input image.
         :return: List of detected objects with class names and confidence scores.
         """
+        image = np.array(image)
         results = self.model(image)
 
         detections = []
@@ -36,7 +39,7 @@ class YOLODetector:
             for box in result.boxes:
                 class_id = int(box.cls[0])
                 confidence = float(box.conf[0])
-                bbox = box.xyxy[0].tolist()  # Bounding box coordinates
+                bbox = list(map(lambda x: round(float(x)), box.xyxy[0]))
                 class_name = self.model.names[class_id]
 
                 # Extract ROI from the image
@@ -64,11 +67,15 @@ class YOLODetector:
                     cv2.imwrite(roi_filename, roi)
                     print("Saved ROI as", roi_filename)
 
+                # convert roi to a PIL image
+                roi_rgb = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
+                roi_pil = Image.fromarray(roi_rgb)
+
                 detections.append({
                     'class': class_name,
                     'confidence': confidence,
                     'bbox': bbox,
-                    'image': roi
+                    'image': roi_pil
                 })
         return detections
 
@@ -76,9 +83,11 @@ class YOLODetector:
 # Example usage:
 if __name__ == '__main__':
     detector = YOLODetector()
-    image_path = 'terrassa.jpg'
-    # image_path = 'tortugues.jpg'
+    image_path = 'example.jpg'
     detections = detector.detect_stored_image(image_path, save_rois=False)
     for det in detections:
         print(
             f"Detected {det['class']} with {det['confidence']:.2f} confidence at {det['bbox']}")
+
+        image = det['image']
+        image.show()
