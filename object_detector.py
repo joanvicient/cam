@@ -3,6 +3,10 @@ import cv2
 import os
 import numpy as np
 from PIL import Image
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class YOLODetector:
@@ -14,6 +18,12 @@ class YOLODetector:
         self.model = YOLO(model_path)
 
     def detect_stored_image(self, image_path, save_rois=False):
+        """
+        Loads an image from image_path and performs object detection on it.
+        :param image_path: Path to the input image.
+        :param save_rois: whether to save the region of interest (ROI) as an image file.
+        :return: List of detected objects with class names and confidence scores.
+        """
         if not os.path.exists(image_path):
             raise FileNotFoundError(
                 f"Image file '{image_path}' does not exist.")
@@ -28,11 +38,12 @@ class YOLODetector:
     def detect_objects(self, image, save_rois=False):
         """
         Perform object detection on an input image.
-        :param image_path: Path to the input image.
+        :param image: input image.
+        :param save_rois: whether to save the region of interest (ROI) as an image file.
         :return: List of detected objects with class names and confidence scores.
         """
         image = np.array(image)
-        results = self.model(image)
+        results = self.model(image, verbose=False)
 
         detections = []
         for result in results:
@@ -48,8 +59,8 @@ class YOLODetector:
 
                 # discard low confidence detections
                 if confidence < 0.25:
-                    print("Discarding low confidence detection:",
-                          class_name, " with confidence:", confidence)
+                    logger.debug("Discarding low confidence detection:",
+                                 class_name, " with confidence:", confidence)
                     continue
 
                 # discard small detection
@@ -57,15 +68,15 @@ class YOLODetector:
                 bbox_width = x2 - x1
                 bbox_height = y2 - y1
                 if bbox_height < minimum and bbox_width < minimum:
-                    print("Discarding small detection, height:",
-                          bbox_height, "width:", bbox_width)
+                    logger.debug("Discarding small detection, height:",
+                                 bbox_height, "width:", bbox_width)
                     continue
 
                 # Optionally save ROI as an image file
                 if save_rois:
                     roi_filename = f"roi_{class_name}_{x1}_{y1}.jpg"
                     cv2.imwrite(roi_filename, roi)
-                    print("Saved ROI as", roi_filename)
+                    logger.debug("Saved ROI as", roi_filename)
 
                 # convert roi to a PIL image
                 roi_rgb = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
@@ -82,12 +93,16 @@ class YOLODetector:
 
 # Example usage:
 if __name__ == '__main__':
+
+    # Set logging level for direct runs
+    logging.basicConfig(level=logging.INFO)
+
     detector = YOLODetector()
     image_path = 'example.jpg'
     detections = detector.detect_stored_image(image_path, save_rois=False)
     for det in detections:
         print(
-            f"Detected {det['class']} with {det['confidence']:.2f} confidence at {det['bbox']}")
+            f"- Detected {det['class']} with {det['confidence']:.2f} confidence at {det['bbox']}")
 
         image = det['image']
         image.show()

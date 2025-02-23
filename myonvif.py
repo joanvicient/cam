@@ -6,14 +6,22 @@ from io import BytesIO
 from onvif import ONVIFCamera
 from urllib.parse import urlparse
 import os
+import logging
 
 WSDL_PATH = os.path.join(os.path.dirname(__file__), 'python-onvif-zeep/wsdl')
 # WSDL_PATH = '/etc/onvif/wsdl'
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class myOnvifClass:
 
     def __init__(self, wsdl_path=WSDL_PATH):
+        """
+        Discover ONVIF cameras using WS-Discovery.
+        :param wsdl_path: Path to the WSDL files for ONVIF discovery.
+        """
         try:
             from wsdiscovery import WSDiscovery
             wsd = WSDiscovery()
@@ -33,16 +41,23 @@ class myOnvifClass:
                         self.cameras[camera['name']] = camera
 
             if self.cameras:
-                print("Discovered ONVIF Cameras:")
+                logger.debug("Discovered ONVIF Cameras:")
                 for camera in self.cameras:
-                    print('- ' + camera)
+                    logger.debug('- ' + camera)
             else:
-                print("No ONVIF cameras found.")
+                logger.error("No ONVIF cameras found.")
 
         except Exception as e:
-            print("Error discovering cameras:", e)
+            logger.error("Error discovering cameras:", e)
 
     def identify_camera(self, ip, port, wsdl_path):
+        """
+        Identify a camera based on its IP address and port.
+        :param ip: IP address of the camera.
+        :param port: Port number of the camera.
+        :param wsdl_path: Path to the WSDL files for ONVIF discovery.
+        :return: Dictionary containing camera information.
+        """
         camera = {}
         camera['ip'] = ip
         camera['port'] = port
@@ -83,38 +98,62 @@ class myOnvifClass:
             return camera
 
         except Exception as e:
-            print("Error connecting to camera:", e)
+            logger.error("Error connecting to camera:", e)
             return []
 
     def get_snapshot(self, name):
+        """
+        Retrieve a snapshot from a camera.
+        :param name: Name of the camera.
+        :return: PIL.Image object representing the snapshot.
+        """
         camera = self.cameras[name]
-        print("Retrieving snapshot from", name)
+        logger.debug("Retrieving snapshot from", name)
         response = requests.get(camera['uri'], auth=HTTPDigestAuth(
             camera['username'], camera['password']), stream=True)
         if response.status_code == 200:
             image = Image.open(BytesIO(response.content))
             return image
         else:
-            print("Failed to retrieve snapshot. Status code:",
-                  response.status_code)
+            logger.error("Failed to retrieve snapshot. Status code:",
+                         response.status_code)
             return None
 
     def show_snapshot(self, camera_name):
+        """
+        Display a snapshot from a camera.
+        :param camera_name: Name of the camera.
+        :return: None
+        """
         image = self.get_snapshot(camera_name)
         if image:
             image.show()
 
     def save_snapshot(self, camera_name, image_name):
+        """
+        Save a snapshot from a camera to a file.
+        :param camera_name: Name of the camera.
+        :param image_name: Name of the file to save the snapshot to.
+        :return: None
+        """
         image = self.get_snapshot(camera_name)
         if image:
             image.save(image_name)
-            print("Snapshot saved as 'snapshot.jpg'")
+            logger.debug("Snapshot saved as 'snapshot.jpg'")
 
     def get_camera_list(self):
+        """
+        Get the list of cameras.
+        :return: List of camera names.
+        """
         return self.cameras.keys()
 
 
 if __name__ == "__main__":
+
+    # Set logging level for direct runs
+    logging.basicConfig(level=logging.INFO)
+
     # Discover cameras
     cameras = myOnvifClass()
 
