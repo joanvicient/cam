@@ -22,5 +22,8 @@ __pycache__/
 # Ignore Jupyter Notebook checkpoints (if using notebooks)
 .ipynb_checkpoints/
 
-# python onvif zeep repo
+# Ignore python onvif zeep repo
 python-onvif-zeep/
+
+# Ignore image files
+*.jpg

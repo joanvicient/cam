@@ -63,7 +63,7 @@ class myOnvifClass:
             camera['serial_number'] = device_info.SerialNumber
             camera['hardware_id'] = device_info.HardwareId
             if device_info.Manufacturer == 'AQE':
-                camera['name'] = "tortuges"
+                camera['name'] = "tortugues"
             elif device_info.Manufacturer == 'LC':
                 camera['name'] = "terrassa"
             else:
@@ -118,5 +118,5 @@ if __name__ == "__main__":
     cameras = myOnvifClass(wsdl_path=WSDL_PATH)
 
     for camera in cameras.get_camera_list():
-        cameras.show_snapshot(camera)
-        # cameras.save_snapshot(camera, camera+".jpg")
+        # cameras.show_snapshot(camera)
+        cameras.save_snapshot(camera, camera+".jpg")
